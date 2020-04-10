@@ -3,10 +3,10 @@ from urllib.error import HTTPError
 from urllib.error import URLError
 import urllib.parse
 from bs4 import BeautifulSoup
-import json
-import pandas as pd
 from docx import Document 
+import json
 import getpass
+import re
 
 def get_input():
     global lang
@@ -14,24 +14,32 @@ def get_input():
     global soup        
 
     lang = input('CHOOSE THE LANGUAGE (pt-Português : en-English) --> ')
-    theme = input('WRITE THE THEME --> ')
     
-    try: 
-        url = 'https://'+ lang +'.wikipedia.org/'
-        user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36'
-        value = {'search': theme}
-        headers = {'User-Agent': user_agent}
-    except HTTPError as e:
-        print(e)
-    except URLError:
-        print('Server down or incorrect domain')
-    else:
-        data = urllib.parse.urlencode(value) 
-        data = data.encode('utf-8')
-        req = Request(url, data, headers)
-        resp = urlopen(req) # abrindo url 
+    while True:
+        if lang == 'pt' or lang == 'en':
 
-        soup = BeautifulSoup(resp, 'html.parser')
+            theme = input('WRITE THE THEME --> ')
+
+            try: 
+                url = 'https://'+ lang +'.wikipedia.org/'
+                user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36'
+                value = {'search': theme}
+                headers = {'User-Agent': user_agent}
+            except HTTPError as e:
+                print(e)
+            except URLError:
+                print('Server down or incorrect domain')
+            else:
+                data = urllib.parse.urlencode(value) 
+                data = data.encode('utf-8')
+                req = Request(url, data, headers)
+                resp = urlopen(req) # abrindo url 
+
+                soup = BeautifulSoup(resp, 'html.parser')
+            break
+        else:
+            print(f'Error not found {lang}')
+            return get_input()
 
 def decompse(): # Função que remove sujeiras do texto.
     try:
@@ -46,17 +54,16 @@ def decompse(): # Função que remove sujeiras do texto.
             'box-Não_enciclopédico plainlinks metadata ambox ambox-content ambox-content', 'mw-editsection',
             'mw-indicators mw-body-content','box-Recentism plainlinks metadata ambox ambox-style ambox-Recentism',
             'presentation','official-website','box-Long_plot plainlinks metadata ambox ambox-style ambox-Plot','box-Unreferenced_section plainlinks metadata ambox ambox-content ambox-Unreferenced',
-            'metadata plainlinks sistersitebox plainlist mbox-small','navbox authority-control' ]}):  # Removendo os links e logos do texto
+            'metadata plainlinks sistersitebox plainlist mbox-small','navbox authority-control']}):  # Removendo os links e logos do texto
             links.decompose()
 
         for refT in soup.find_all(['span','div','h2'], {'id': ['Referências', 'Ligações_externas', 'mw-editsection','mw-headline', 'catlinks','Publica.C3.A7.C3.A3o']}): #Removendo links de referencias
             refT.decompose()
 
-        for st in soup.findAll('style'):
+        for st in soup.findAll('table' ,{'style':'border-collapse: collapse'}):
             st.decompose()
     except:pass
     return None
-
 
 # Funçao que Traz o endereço das imagens. 
 def get_link():
@@ -65,16 +72,18 @@ def get_link():
 
     urls = soup.findAll('img') #pesquisando em todas as tags <img>
     for img in urls:
-        if img == '.jpg' or '.png':
+        if re.findall(r'jpg', img.get('src')):
             href.append('https:' + img.get('src')) # percorre as tags <img> e tras o contrudo da teg <src>        
-            link = {'urls': href} # criando um json 
+        else:
+            pass
+
+        link = {'urls': href} # criando um json 
 
     # salvando em um arquivo .json os links.
     with open('url.json','w') as file:
         json.dump(link,file, indent=2, separators=(',',':'), ensure_ascii=False)
-    
+        file.close()
     return None
-
 
 def get_text():
 
