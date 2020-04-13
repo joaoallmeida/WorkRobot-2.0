@@ -7,6 +7,7 @@ from docx import Document
 import json
 import getpass
 import re
+import sys
 
 def get_input():
     global lang
@@ -54,7 +55,7 @@ def decompse(): # Função que remove sujeiras do texto.
             'box-Não_enciclopédico plainlinks metadata ambox ambox-content ambox-content', 'mw-editsection',
             'mw-indicators mw-body-content','box-Recentism plainlinks metadata ambox ambox-style ambox-Recentism',
             'presentation','official-website','box-Long_plot plainlinks metadata ambox ambox-style ambox-Plot','box-Unreferenced_section plainlinks metadata ambox ambox-content ambox-Unreferenced',
-            'metadata plainlinks sistersitebox plainlist mbox-small','navbox authority-control']}):  # Removendo os links e logos do texto
+            'metadata plainlinks sistersitebox plainlist mbox-small','navbox authority-control',"mbox-text-span"]}):  # Removendo os links e logos do texto
             links.decompose()
 
         for refT in soup.find_all(['span','div','h2'], {'id': ['Referências', 'Ligações_externas', 'mw-editsection','mw-headline', 'catlinks','Publica.C3.A7.C3.A3o']}): #Removendo links de referencias
@@ -72,7 +73,7 @@ def get_link():
 
     urls = soup.findAll('img') #pesquisando em todas as tags <img>
     for img in urls:
-        if re.findall(r'jpg', img.get('src')):
+        if re.findall(r'[jpg]+[png]+', img.get('src')):
             href.append('https:' + img.get('src')) # percorre as tags <img> e tras o contrudo da teg <src>        
         else:
             pass
@@ -92,11 +93,18 @@ def get_text():
     tags = soup.find('div', {'id': 'mw-content-text'})   
     tagsfinal = tags.text.strip()
 
-    doc = Document()
+    if sys.platform.startswith('win32'):
+        doc = Document()
 
-    doc.add_heading(theme,0)   
-    doc.add_paragraph(tagsfinal)
-    doc.save('C:/Users/' + usr + '/Desktop/' + theme + '.docx')
+        doc.add_heading(theme,0)   
+        doc.add_paragraph(tagsfinal)
+        doc.save('C:/Users/' + usr + '/Desktop/' + theme + '.docx')
+    elif sys.platform.startswith('linux'):
+        with open('home/' + usr + '/Área de Trabalho/'+ theme + '.odt','w') as file:
+            file.write(tagsfinal)
+            file.close()
+    else:
+        print('System not found !')
 
     return tagsfinal
 

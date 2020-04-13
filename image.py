@@ -1,13 +1,19 @@
+from text import theme
 import pandas as pd 
 import urllib.request
 import os
 import getpass
-from text import theme
+import sys 
 
 usr = getpass.getuser()
 
 FILENAME  = 'url.json' # definindo qual arquivo deve ser lido. 
-FILE_PATH = 'C:/Users/' + usr + '/Desktop/' + theme + '/' # definindo caminho para pasta 
+if sys.platform.startswith('win32'):
+    FILE_PATH = 'C:/Users/' + usr + '/Desktop/' + theme + '/' # definindo caminho para pasta 
+elif sys.platform.startswith('linux'):
+    FILE_PATH = 'home/' + usr + '/Área de Trabalho/'+ theme + '/' 
+else:
+    print('System not found !')
 
 os.mkdir(FILE_PATH) # criando a pasta no desktop
 
